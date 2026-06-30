@@ -23,11 +23,11 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install -r pricing-watcher/requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run pricing check
         id: check
-        run: python pricing-watcher/check_pricing.py
+        run: python check_pricing.py
 
       - name: Open a pull request if prices changed
         if: steps.check.outputs.changes_detected == 'true'
@@ -35,7 +35,7 @@ jobs:
         with:
           commit-message: 'Update LLM pricing snapshot'
           title: 'Monthly pricing check: changes detected'
-          body-path: pricing-watcher/pricing-diff-summary.md
+          body-path: pricing-diff-summary.md
           branch: pricing-update-${{ github.run_number }}
           add-paths: |
-            pricing-watcher/pricing-data.json
+            pricing-data.json
