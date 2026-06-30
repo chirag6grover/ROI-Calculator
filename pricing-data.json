@@ -1,0 +1,16 @@
+{
+  "gemini-3-5-flash":      {"input": 1.50, "output": 9.00,  "cached": 0.15,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gemini-3-1-pro-200":    {"input": 2.00, "output": 12.00, "cached": 0.20,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gemini-3-1-pro-200p":   {"input": 4.00, "output": 18.00, "cached": null,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gemini-3-1-flash-lite": {"input": 0.25, "output": 1.50,  "cached": null,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gemini-2-5-pro-200":    {"input": 1.25, "output": 10.00, "cached": 0.13,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gemini-2-5-pro-200p":   {"input": 2.50, "output": 15.00, "cached": 0.25,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gemini-2-5-flash":      {"input": 0.30, "output": 2.50,  "cached": 0.03,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gpt-5-5":               {"input": 5.00, "output": 30.00, "cached": 0.50,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gpt-5-4":               {"input": 2.50, "output": 15.00, "cached": 0.25,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gpt-5-4-mini":          {"input": 0.75, "output": 4.50,  "cached": 0.08,  "verified": "2026-06-01", "source": "manual-seed"},
+  "gpt-5-4-nano":          {"input": 0.20, "output": 1.25,  "cached": 0.02,  "verified": "2026-06-01", "source": "manual-seed"},
+  "claude-opus-4-8":       {"input": 5.00, "output": 25.00, "cached": 0.50,  "verified": "2026-06-01", "source": "manual-seed"},
+  "claude-sonnet-4-6":     {"input": 3.00, "output": 15.00, "cached": 0.30,  "verified": "2026-06-01", "source": "manual-seed"},
+  "claude-haiku-4-5":      {"input": 1.00, "output": 5.00,  "cached": 0.10,  "verified": "2026-06-01", "source": "manual-seed"}
+}
