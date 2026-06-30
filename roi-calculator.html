@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automation Ledger — AI ROI Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0D12;
+    --surface:#11151C;
+    --surface-2:#161B23;
+    --surface-3:#1B212B;
+    --border:#222834;
+    --border-strong:#2E3640;
+    --text:#ECEEF3;
+    --text-dim:#9AA3B2;
+    --text-faint:#5C6573;
+    --warm:#E8743C;
+    --warm-soft:rgba(232,116,60,0.12);
+    --warm-strong:rgba(232,116,60,0.35);
+    --cool:#3DD9C4;
+    --cool-soft:rgba(61,217,196,0.12);
+    --cool-strong:rgba(61,217,196,0.35);
+    --google:#6C9BF5;
+    --openai:#5FD0A8;
+    --anthropic:#B68CF0;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+    --radius:16px;
+    --radius-sm:10px;
+    --maxw:1180px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:var(--font-display); margin:0; letter-spacing:-0.01em;}
+  p{margin:0;}
+  a{color:var(--cool);}
+  button{font-family:var(--font-body); cursor:pointer;}
+  ::selection{background:var(--cool-soft);}
+  :focus-visible{outline:2px solid var(--cool); outline-offset:2px;}
+
+  .mono{font-family:var(--font-mono); font-feature-settings:"tnum"; }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+  }
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 24px;
+    background:rgba(10,13,18,0.86);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand__mark{
+    width:28px; height:28px; border-radius:7px;
+    background:linear-gradient(135deg, var(--warm), var(--cool));
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:13px; font-weight:600; color:#0A0D12;
+  }
+  .brand__name{font-family:var(--font-display); font-weight:600; font-size:15px;}
+  .brand__sub{font-size:11px; color:var(--text-faint); font-family:var(--font-mono);}
+  .topbar__right{display:flex; align-items:center; gap:10px;}
+  .pill{
+    font-family:var(--font-mono); font-size:11px; color:var(--text-dim);
+    border:1px solid var(--border-strong); border-radius:999px;
+    padding:5px 12px; white-space:nowrap;
+  }
+  .btn{
+    border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text);
+    border-radius:999px; padding:7px 14px; font-size:13px; font-weight:500;
+    transition:border-color .15s, background .15s;
+  }
+  .btn:hover{border-color:var(--cool); background:var(--surface-3);}
+  .btn--ghost{background:transparent;}
+
+  /* ---------- ticker ---------- */
+  .ticker-wrap{overflow:hidden; background:var(--surface); border-bottom:1px solid var(--border);}
+  .ticker{display:flex; gap:0; width:max-content; animation:scroll-left 42s linear infinite; padding:7px 0;}
+  .ticker-wrap:hover .ticker{animation-play-state:paused;}
+  .ticker__item{
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--font-mono); font-size:12px; color:var(--text-dim);
+    padding:0 22px; border-right:1px solid var(--border); white-space:nowrap;
+  }
+  .ticker__dot{width:6px; height:6px; border-radius:50%; flex:none;}
+  .ticker__price{color:var(--text);}
+  @keyframes scroll-left{from{transform:translateX(0);} to{transform:translateX(-50%);}}
+  @media (prefers-reduced-motion: reduce){
+    .ticker{animation:none; overflow-x:auto;}
+  }
+
+  main{max-width:var(--maxw); margin:0 auto; padding:0 24px 80px;}
+
+  /* ---------- hero ---------- */
+  .hero{
+    display:grid; grid-template-columns:1.05fr 1fr; gap:40px;
+    padding:56px 0 44px; align-items:start;
+  }
+  .hero h1{font-size:clamp(28px, 4vw, 40px); font-weight:600; margin:10px 0 16px; line-height:1.12;}
+  .hero__sub{color:var(--text-dim); font-size:15.5px; max-width:480px;}
+
+  .card{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:22px;
+  }
+  .input-deck__grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field--full{grid-column:1 / -1;}
+  .field label{font-size:12.5px; color:var(--text-dim); font-weight:500;}
+  .field__input-wrap{position:relative; display:flex; align-items:center;}
+  .field__prefix{
+    position:absolute; left:12px; font-family:var(--font-mono); color:var(--text-faint); font-size:14px;
+  }
+  .field input[type="number"]{
+    width:100%; background:var(--surface); border:1px solid var(--border-strong);
+    border-radius:var(--radius-sm); color:var(--text); font-family:var(--font-mono); font-size:14.5px;
+    padding:10px 12px; padding-left:12px;
+  }
+  .field input[type="number"].has-prefix{padding-left:26px;}
+  .field input[type="number"]:focus{border-color:var(--cool);}
+  .field__hint{font-size:11px; color:var(--text-faint);}
+
+  .advanced-toggle{
+    margin-top:16px; width:100%; text-align:left; background:transparent; border:none; color:var(--text-dim);
+    font-size:12.5px; padding:8px 0 0; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;
+  }
+  .advanced-toggle:hover{color:var(--text);}
+  .advanced-panel{margin-top:14px; display:flex; flex-direction:column; gap:16px;}
+  .advanced-panel[hidden]{display:none;}
+  .slider-row{display:flex; flex-direction:column; gap:6px;}
+  .slider-row__top{display:flex; justify-content:space-between; align-items:baseline;}
+  .slider-row__top span:last-child{font-family:var(--font-mono); color:var(--cool); font-size:13px;}
+  input[type="range"]{
+    -webkit-appearance:none; width:100%; height:4px; border-radius:2px; background:var(--border-strong); outline:none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:var(--cool); cursor:pointer; border:3px solid var(--bg);
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%; background:var(--cool); cursor:pointer; border:3px solid var(--bg);
+  }
+
+  /* ---------- before / after ---------- */
+  .before-after{
+    display:grid; grid-template-columns:1fr auto 1fr; gap:0; align-items:stretch;
+    margin-bottom:48px;
+  }
+  .ba-card{
+    border-radius:var(--radius); padding:26px; display:flex; flex-direction:column; gap:18px;
+    border:1px solid var(--border);
+  }
+  .ba-card--warm{background:linear-gradient(160deg, var(--warm-soft), transparent 70%), var(--surface-2); border-color:var(--warm-strong);}
+  .ba-card--cool{background:linear-gradient(160deg, var(--cool-soft), transparent 70%), var(--surface-2); border-color:var(--cool-strong);}
+  .ba-card__eyebrow{display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase;}
+  .ba-card--warm .ba-card__eyebrow{color:var(--warm);}
+  .ba-card--cool .ba-card__eyebrow{color:var(--cool);}
+  .ba-card__big{font-family:var(--font-mono); font-size:clamp(30px,4vw,42px); font-weight:600; line-height:1;}
+  .ba-card__rows{display:flex; flex-direction:column; gap:8px; margin-top:4px;}
+  .ba-row{display:flex; justify-content:space-between; font-size:13px; color:var(--text-dim);}
+  .ba-row b{color:var(--text); font-family:var(--font-mono); font-weight:500;}
+  .model-select{
+    background:var(--surface); border:1px solid var(--border-strong); color:var(--text);
+    border-radius:var(--radius-sm); padding:8px 10px; font-size:13px; font-family:var(--font-body); width:100%;
+  }
+  .ba-divider{display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 20px; gap:10px;}
+  .ba-arrow{font-size:22px; color:var(--text-faint);}
+  .savings-banner{
+    text-align:center; max-width:190px;
+  }
+  .savings-banner__amt{font-family:var(--font-mono); font-size:20px; color:var(--cool); font-weight:600;}
+  .savings-banner__sub{font-size:11.5px; color:var(--text-dim); margin-top:4px; line-height:1.4;}
+
+  @media (max-width:880px){
+    .hero{grid-template-columns:1fr;}
+    .before-after{grid-template-columns:1fr;}
+    .ba-divider{padding:14px 0; flex-direction:row; gap:18px;}
+  }
+
+  /* ---------- section heads ---------- */
+  .section-head{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; flex-wrap:wrap;}
+  .section-head h2{font-size:20px; font-weight:600;}
+  .section-head__sub{color:var(--text-faint); font-size:12.5px; margin-top:4px;}
+
+  .tier-filters{display:flex; gap:6px; flex-wrap:wrap;}
+  .tier-filters button{
+    background:var(--surface-2); border:1px solid var(--border); color:var(--text-dim);
+    border-radius:999px; padding:6px 13px; font-size:12.5px;
+  }
+  .tier-filters button.is-active{background:var(--surface-3); color:var(--text); border-color:var(--cool);}
+
+  /* ---------- table ---------- */
+  .table-section, .stats-grid, .pricing-ledger{margin-bottom:52px;}
+  .table-scroll{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius);}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:760px;}
+  thead th{
+    text-align:left; padding:12px 16px; font-family:var(--font-mono); font-size:11px; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--text-faint); background:var(--surface-2); border-bottom:1px solid var(--border);
+    white-space:nowrap; position:sticky; top:0;
+  }
+  thead th.sortable{cursor:pointer; user-select:none;}
+  thead th.sortable:hover{color:var(--text-dim);}
+  thead th .arrow{opacity:0.5; margin-left:3px;}
+  tbody tr{border-bottom:1px solid var(--border); cursor:pointer; transition:background .12s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--surface-2);}
+  tbody tr.is-selected{background:var(--cool-soft);}
+  tbody td{padding:13px 16px; white-space:nowrap;}
+  td.num{font-family:var(--font-mono); text-align:right;}
+  td.model-cell{display:flex; flex-direction:column; gap:2px; white-space:normal;}
+  .model-cell__tier{font-size:11px; color:var(--text-faint);}
+  .tag{
+    display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-family:var(--font-mono);
+    padding:3px 9px; border-radius:999px; border:1px solid var(--border-strong);
+  }
+  .tag__dot{width:6px; height:6px; border-radius:50%;}
+  .badge-cheap{
+    display:inline-block; margin-left:8px; font-size:10px; font-family:var(--font-mono); color:var(--bg);
+    background:var(--cool); padding:2px 7px; border-radius:999px; vertical-align:middle;
+  }
+  .pos{color:var(--cool);}
+
+  /* ---------- stats ---------- */
+  .stats-grid__inner{display:grid; grid-template-columns:repeat(3, 1fr); gap:14px;}
+  .stat-card{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius); padding:20px;
+  }
+  .stat-card__label{font-size:12px; color:var(--text-dim);}
+  .stat-card__val{font-family:var(--font-mono); font-size:26px; font-weight:600; margin-top:8px; color:var(--text);}
+  .stat-card__note{font-size:11.5px; color:var(--text-faint); margin-top:6px;}
+  @media (max-width:880px){.stats-grid__inner{grid-template-columns:1fr 1fr;}}
+  @media (max-width:560px){.stats-grid__inner{grid-template-columns:1fr;}}
+
+  /* ---------- pricing ledger ---------- */
+  .ledger-note{color:var(--text-faint); font-size:12.5px; margin-bottom:16px; max-width:640px;}
+  .ledger-input{
+    width:84px; background:var(--surface); border:1px solid var(--border-strong); color:var(--text);
+    font-family:var(--font-mono); font-size:13px; border-radius:7px; padding:6px 8px;
+  }
+  .ledger-input:focus{border-color:var(--cool);}
+  .verified-cell{display:flex; flex-direction:column; gap:2px;}
+  .verified-cell__date{font-size:12px; color:var(--text-dim);}
+  .verified-cell a{font-size:11px; color:var(--text-faint); text-decoration:none;}
+  .verified-cell a:hover{color:var(--cool);}
+  .ledger-footer{display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:12px; flex-wrap:wrap;}
+  .save-status{font-size:12px; color:var(--text-faint); font-family:var(--font-mono);}
+
+  /* ---------- methodology ---------- */
+  .methodology{border-top:1px solid var(--border); padding-top:32px;}
+  .methodology h3{font-size:15px; margin-bottom:14px;}
+  .methodology ul{margin:0; padding-left:18px; color:var(--text-dim); font-size:13px; display:flex; flex-direction:column; gap:8px;}
+  .fine-print{margin-top:20px; color:var(--text-faint); font-size:11.5px; line-height:1.6;}
+
+  @media print{
+    .topbar, .ticker-wrap, .input-deck, .advanced-panel, .tier-filters, .pricing-ledger, .advanced-toggle, .btn{display:none !important;}
+    body{background:#fff; color:#111;}
+    .card, .ba-card, .stat-card, table, .table-scroll{background:#fff !important; border-color:#ccc !important;}
+    .ba-card__big, .stat-card__val{color:#111 !important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand__mark">ROI</div>
+    <div>
+      <div class="brand__name">Automation Ledger</div>
+      <div class="brand__sub">AI ROI calculator</div>
+    </div>
+  </div>
+  <div class="topbar__right">
+    <span class="pill" id="snapshotPill">Pricing snapshot · Jun 2026</span>
+    <button class="btn btn--ghost" onclick="window.print()">Print summary</button>
+    <button class="btn" onclick="document.getElementById('ledgerSection').scrollIntoView({behavior:'smooth'})">Edit pricing</button>
+  </div>
+</header>
+
+<div class="ticker-wrap" aria-hidden="true">
+  <div class="ticker" id="tickerTrack"></div>
+</div>
+
+<main>
+
+  <section class="hero">
+    <div class="hero__thesis">
+      <p class="eyebrow">AI automation · ROI</p>
+      <h1>What does the busywork actually cost you?</h1>
+      <p class="hero__sub">Enter a manual task once. See what it costs your team today, and what it would cost across 14 models from Google, OpenAI, and Anthropic — recalculated the moment any number changes, including the prices themselves.</p>
+    </div>
+
+    <div class="card input-deck">
+      <div class="input-deck__grid">
+        <div class="field">
+          <label for="hourlyRate">Hourly rate</label>
+          <div class="field__input-wrap">
+            <span class="field__prefix">$</span>
+            <input type="number" id="hourlyRate" class="has-prefix" value="40" min="0" step="0.5">
+          </div>
+        </div>
+        <div class="field">
+          <label for="hoursPerWeek">Hours/week on this task</label>
+          <input type="number" id="hoursPerWeek" value="8" min="0" step="0.5">
+        </div>
+        <div class="field">
+          <label for="weeksPerYear">Working weeks/year</label>
+          <input type="number" id="weeksPerYear" value="48" min="1" max="52" step="1">
+        </div>
+        <div class="field">
+          <label for="inputTokens">Input tokens / task</label>
+          <input type="number" id="inputTokens" value="50000" min="0" step="500">
+        </div>
+        <div class="field field--full">
+          <label for="outputTokens">Output tokens / task</label>
+          <input type="number" id="outputTokens" value="3000" min="0" step="100">
+          <span class="field__hint">We treat each manual hour as one AI task execution that consumes these tokens — editable below.</span>
+        </div>
+      </div>
+
+      <button class="advanced-toggle" id="advancedToggle">
+        <span>Advanced assumptions</span><span id="advancedChevron">▾</span>
+      </button>
+      <div class="advanced-panel" id="advancedPanel" hidden>
+        <div class="slider-row">
+          <div class="slider-row__top"><span>Automation efficiency</span><span id="efficiencyVal">80%</span></div>
+          <input type="range" id="efficiencyPct" min="0" max="100" step="5" value="80">
+          <span class="field__hint">Share of the manual hours this task actually removes. The rest stays with your team for review and exceptions.</span>
+        </div>
+        <div class="slider-row">
+          <div class="slider-row__top"><span>Input tokens served from cache</span><span id="cacheVal">0%</span></div>
+          <input type="range" id="cachePct" min="0" max="100" step="5" value="0">
+          <span class="field__hint">Repeated context (system prompts, retrieved docs) often qualifies for cached‑input pricing where a model supports it.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="before-after">
+    <div class="ba-card ba-card--warm">
+      <div class="ba-card__eyebrow"><span>●</span> Before — done by hand</div>
+      <div class="ba-card__big mono" id="manualBig">$0</div>
+      <div class="ba-card__rows">
+        <div class="ba-row"><span>Hours / year</span><b id="manualHours">0</b></div>
+        <div class="ba-row"><span>Hourly rate</span><b id="manualRate">$0/hr</b></div>
+        <div class="ba-row"><span>Working weeks</span><b id="manualWeeks">0</b></div>
+      </div>
+    </div>
+
+    <div class="ba-divider">
+      <div class="ba-arrow">→</div>
+      <div class="savings-banner">
+        <div class="savings-banner__amt mono" id="savingsAmt">$0</div>
+        <div class="savings-banner__sub" id="savingsSub">saved per year</div>
+      </div>
+    </div>
+
+    <div class="ba-card ba-card--cool">
+      <div class="ba-card__eyebrow"><span>●</span> After — automated with</div>
+      <select class="model-select" id="heroModelSelect"></select>
+      <div class="ba-card__big mono" id="autoBig">$0</div>
+      <div class="ba-card__rows">
+        <div class="ba-row"><span>Task executions / year</span><b id="autoVolume">0</b></div>
+        <div class="ba-row"><span>Hours freed / year</span><b id="autoHoursFreed">0</b></div>
+        <div class="ba-row"><span>Effective cost / hr freed</span><b id="autoCostPerHour">$0</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="section-head">
+      <div>
+        <h2>Cost across every model</h2>
+        <div class="section-head__sub">Click any row to feature it above. Click a column header to sort.</div>
+      </div>
+      <div class="tier-filters" id="tierFilters"></div>
+    </div>
+    <div class="table-scroll">
+      <table id="costTable">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Provider</th>
+            <th class="sortable" data-key="input">Input /1M</th>
+            <th class="sortable" data-key="output">Output /1M</th>
+            <th>Cached /1M</th>
+            <th class="sortable" data-key="cost">Annual AI cost</th>
+            <th class="sortable" data-key="savings">Net savings</th>
+            <th class="sortable" data-key="roi">ROI</th>
+          </tr>
+        </thead>
+        <tbody id="costTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="stats-grid">
+    <div class="section-head">
+      <div>
+        <h2>ROI detail — selected model</h2>
+        <div class="section-head__sub">Based on the model featured in the comparison above.</div>
+      </div>
+    </div>
+    <div class="stats-grid__inner" id="statsGrid"></div>
+  </section>
+
+  <section class="pricing-ledger" id="ledgerSection">
+    <div class="section-head">
+      <div>
+        <h2>Keep pricing current</h2>
+        <div class="section-head__sub">Edit any price below — every number above recalculates instantly, and edits are saved for next time.</div>
+      </div>
+      <button class="btn btn--ghost" id="resetPricingBtn">Reset to Jun 2026 defaults</button>
+    </div>
+    <div class="table-scroll">
+      <table id="ledgerTable">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Provider</th>
+            <th>Input /1M</th>
+            <th>Output /1M</th>
+            <th>Cached /1M</th>
+            <th>Verified</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerTableBody"></tbody>
+      </table>
+    </div>
+    <div class="ledger-footer">
+      <span class="save-status" id="saveStatus">Loading saved pricing…</span>
+    </div>
+  </section>
+
+  <footer class="methodology">
+    <h3>How this is calculated</h3>
+    <ul>
+      <li>Annual manual cost = hourly rate × hours/week × working weeks/year.</li>
+      <li>Task volume (executions/year) = hours/week × working weeks/year — each manual hour is treated as one AI task run consuming the input/output tokens above. Adjust the token counts to match your actual workload.</li>
+      <li>Automation efficiency (default 80%) is the share of manual hours the automation removes; the rest stays with your team for oversight and exceptions.</li>
+      <li>Annual AI cost (per model) = task volume × (input tokens × input price + output tokens × output price), using cached‑input pricing for the share of tokens you mark as cached, where a model offers it.</li>
+      <li>Net annual savings = (manual cost × efficiency) − annual AI cost. ROI% = net savings ÷ AI cost. Payback period = AI cost ÷ daily savings rate.</li>
+      <li>All prices are per 1,000,000 tokens, in USD, and editable in the pricing ledger above — no provider publishes a live pricing API, so figures are a snapshot you update by hand as prices change.</li>
+    </ul>
+    <p class="fine-print">This tool is for planning conversations with prospective clients, not a quote or invoice. Pricing shown reflects a June 2026 snapshot from publicly listed rates and may not include volume discounts, batch pricing, or enterprise agreements — always confirm against the provider's current pricing page before presenting final numbers.</p>
+  </footer>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  var DEFAULT_VERIFIED = "Jun 2026";
+
+  var MODELS = [
+    {id:"gemini-3-5-flash",     provider:"Google",    name:"Gemini 3.5 Flash",            tier:"Fast / Default",            category:"Fast/Default", input:1.50, output:9.00,  cached:0.15, url:"https://ai.google.dev/pricing"},
+    {id:"gemini-3-1-pro-200",   provider:"Google",    name:"Gemini 3.1 Pro (≤200K ctx)",   tier:"Flagship",                  category:"Flagship",     input:2.00, output:12.00, cached:0.20, url:"https://ai.google.dev/pricing"},
+    {id:"gemini-3-1-pro-200p",  provider:"Google",    name:"Gemini 3.1 Pro (>200K ctx)",   tier:"Flagship · Long context",   category:"Flagship",     input:4.00, output:18.00, cached:null, url:"https://ai.google.dev/pricing"},
+    {id:"gemini-3-1-flash-lite",provider:"Google",    name:"Gemini 3.1 Flash-Lite",        tier:"Budget",                    category:"Budget",       input:0.25, output:1.50,  cached:null, url:"https://ai.google.dev/pricing"},
+    {id:"gemini-2-5-pro-200",   provider:"Google",    name:"Gemini 2.5 Pro (≤200K ctx)",   tier:"Legacy flagship",           category:"Legacy",       input:1.25, output:10.00, cached:0.13, url:"https://ai.google.dev/pricing"},
+    {id:"gemini-2-5-pro-200p",  provider:"Google",    name:"Gemini 2.5 Pro (>200K ctx)",   tier:"Legacy flagship · Long ctx",category:"Legacy",       input:2.50, output:15.00, cached:0.25, url:"https://ai.google.dev/pricing"},
+    {id:"gemini-2-5-flash",     provider:"Google",    name:"Gemini 2.5 Flash",             tier:"Legacy fast",               category:"Legacy",       input:0.30, output:2.50,  cached:0.03, url:"https://ai.google.dev/pricing"},
+    {id:"gpt-5-5",              provider:"OpenAI",    name:"GPT-5.5",                      tier:"Flagship",                  category:"Flagship",     input:5.00, output:30.00, cached:0.50, url:"https://openai.com/api/pricing/"},
+    {id:"gpt-5-4",              provider:"OpenAI",    name:"GPT-5.4",                      tier:"Balanced",                  category:"Balanced",     input:2.50, output:15.00, cached:0.25, url:"https://openai.com/api/pricing/"},
+    {id:"gpt-5-4-mini",         provider:"OpenAI",    name:"GPT-5.4 mini",                 tier:"Fast / Default",            category:"Fast/Default", input:0.75, output:4.50,  cached:0.08, url:"https://openai.com/api/pricing/"},
+    {id:"gpt-5-4-nano",         provider:"OpenAI",    name:"GPT-5.4 nano",                 tier:"Budget",                    category:"Budget",       input:0.20, output:1.25,  cached:0.02, url:"https://openai.com/api/pricing/"},
+    {id:"claude-opus-4-8",      provider:"Anthropic", name:"Claude Opus 4.8",              tier:"Flagship",                  category:"Flagship",     input:5.00, output:25.00, cached:0.50, url:"https://www.anthropic.com/pricing"},
+    {id:"claude-sonnet-4-6",    provider:"Anthropic", name:"Claude Sonnet 4.6",            tier:"Balanced / Default",        category:"Balanced",     input:3.00, output:15.00, cached:0.30, url:"https://www.anthropic.com/pricing"},
+    {id:"claude-haiku-4-5",     provider:"Anthropic", name:"Claude Haiku 4.5",             tier:"Budget",                    category:"Budget",       input:1.00, output:5.00,  cached:0.10, url:"https://www.anthropic.com/pricing"}
+  ];
+
+  var PROVIDER_VAR = {Google:"--google", OpenAI:"--openai", Anthropic:"--anthropic"};
+  var TIERS = ["All","Flagship","Balanced","Fast/Default","Budget","Legacy"];
+
+  // ============ SETUP: monthly auto-updated pricing (optional) ============
+  // Point this at the pricing-data.json raw URL from your GitHub pricing-feed
+  // repo (see README.md in the starter kit) to have prices refresh automatically
+  // whenever the monthly check finds and approves a change. Leave blank to use
+  // the built-in snapshot below — the calculator works fully either way.
+  // Example: "https://raw.githubusercontent.com/your-org/roi-pricing-feed/main/pricing-data.json"
+  var PRICING_FEED_URL = "";
+  // ==========================================================================
+
+  var overrides = {};      // modelId -> {input, output, cached, verified}
+  var remoteFeed = {};     // modelId -> {input, output, cached, verified} from PRICING_FEED_URL
+  var remoteFeedStatus = PRICING_FEED_URL ? "loading" : "unconfigured"; // unconfigured | loading | ok | error
+  var remoteFeedDate = null;
+  var selectedModelId = "claude-sonnet-4-6";
+  var activeTier = "All";
+  var sortKey = "cost";
+  var sortDir = "asc";
+  var storageAvailable = (typeof window.storage !== "undefined");
+
+  // ---------- helpers ----------
+  function $(id){ return document.getElementById(id); }
+
+  function fmtUSD(n){
+    if (!isFinite(n)) return "—";
+    var decimals = Math.abs(n) < 1000 ? 2 : 0;
+    return "$" + n.toLocaleString("en-US", {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+  }
+  function fmtNum(n, decimals){
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString("en-US", {maximumFractionDigits: decimals || 0});
+  }
+  function fmtPct(n){
+    if (!isFinite(n)) return "—";
+    var decimals = Math.abs(n) >= 1000 ? 0 : 1;
+    return n.toLocaleString("en-US", {maximumFractionDigits:decimals}) + "%";
+  }
+  function todayLabel(){
+    return new Date().toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"});
+  }
+  function sourceLabel(source){
+    if (source === "manual") return " · edited by you";
+    if (source === "feed") return " · auto-checked";
+    return " · built-in";
+  }
+
+  function getEffective(model){
+    var remote = remoteFeed[model.id];
+    var base = {
+      input:  (remote && remote.input  != null) ? remote.input  : model.input,
+      output: (remote && remote.output != null) ? remote.output : model.output,
+      cached: (remote && remote.cached !== undefined) ? remote.cached : model.cached,
+      verified: (remote && remote.verified) ? remote.verified : DEFAULT_VERIFIED,
+      source: remote ? "feed" : "default"
+    };
+    var o = overrides[model.id] || {};
+    var manualEdit = (o.input !== undefined || o.output !== undefined || o.cached !== undefined);
+    return {
+      input:  (o.input  !== undefined && o.input  !== null) ? o.input  : base.input,
+      output: (o.output !== undefined && o.output !== null) ? o.output : base.output,
+      cached: (o.cached !== undefined) ? o.cached : base.cached,
+      verified: o.verified || base.verified,
+      source: manualEdit ? "manual" : base.source
+    };
+  }
+
+  function readInputs(){
+    return {
+      hourlyRate:   parseFloat($("hourlyRate").value) || 0,
+      hoursPerWeek: parseFloat($("hoursPerWeek").value) || 0,
+      weeksPerYear: parseFloat($("weeksPerYear").value) || 0,
+      inputTokens:  parseFloat($("inputTokens").value) || 0,
+      outputTokens: parseFloat($("outputTokens").value) || 0,
+      efficiencyPct: parseFloat($("efficiencyPct").value) || 0,
+      cachePct:      parseFloat($("cachePct").value) || 0
+    };
+  }
+
+  function computeManual(inp){
+    var annualHours = inp.hoursPerWeek * inp.weeksPerYear;
+    var annualManualCost = inp.hourlyRate * annualHours;
+    var hoursSaved = annualHours * (inp.efficiencyPct/100);
+    var laborCostAvoided = annualManualCost * (inp.efficiencyPct/100);
+    return {annualHours:annualHours, annualManualCost:annualManualCost, hoursSaved:hoursSaved, laborCostAvoided:laborCostAvoided};
+  }
+
+  function computeModel(model, inp, manual){
+    var eff = getEffective(model);
+    var volume = manual.annualHours; // 1 manual hour ≈ 1 task execution
+    var cacheFrac = inp.cachePct/100;
+    var effectiveInputPrice = eff.input;
+    if (eff.cached !== null && eff.cached !== undefined && cacheFrac > 0){
+      effectiveInputPrice = eff.input * (1-cacheFrac) + eff.cached * cacheFrac;
+    }
+    var costPerTask = (inp.inputTokens/1e6) * effectiveInputPrice + (inp.outputTokens/1e6) * eff.output;
+    var annualCost = volume * costPerTask;
+    var netSavings = manual.laborCostAvoided - annualCost;
+    var roi = annualCost > 0 ? (netSavings/annualCost)*100 : Infinity;
+    var multiplier = annualCost > 0 ? (manual.laborCostAvoided/annualCost) : Infinity;
+    var dailySavings = netSavings/365;
+    var paybackDays = (dailySavings > 0) ? (annualCost/dailySavings) : null;
+    return {
+      model:model, eff:eff, volume:volume, annualCost:annualCost, netSavings:netSavings,
+      roi:roi, multiplier:multiplier, paybackDays:paybackDays
+    };
+  }
+
+  // ---------- ticker ----------
+  function renderTicker(){
+    var items = MODELS.map(function(m){
+      var eff = getEffective(m);
+      var varName = PROVIDER_VAR[m.provider];
+      return '<span class="ticker__item"><span class="ticker__dot" style="background:var(' + varName + ')"></span>' +
+             m.name + '&nbsp;&nbsp;<span class="ticker__price mono">$' + eff.input.toFixed(2) + ' / $' + eff.output.toFixed(2) + '</span></span>';
+    }).join("");
+    $("tickerTrack").innerHTML = items + items; // duplicate for seamless loop
+  }
+
+  // ---------- tier filters ----------
+  function renderTierFilters(){
+    var wrap = $("tierFilters");
+    wrap.innerHTML = "";
+    TIERS.forEach(function(t){
+      var b = document.createElement("button");
+      b.textContent = t;
+      if (t === activeTier) b.className = "is-active";
+      b.addEventListener("click", function(){ activeTier = t; recalcAll(); });
+      wrap.appendChild(b);
+    });
+  }
+
+  // ---------- hero model select ----------
+  function renderModelSelect(){
+    var sel = $("heroModelSelect");
+    sel.innerHTML = "";
+    MODELS.forEach(function(m){
+      var opt = document.createElement("option");
+      opt.value = m.id;
+      opt.textContent = m.provider + " — " + m.name;
+      if (m.id === selectedModelId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  // ---------- main table ----------
+  function renderTable(results){
+    var cheapestId = results.reduce(function(best, r){
+      return (!best || r.annualCost < best.annualCost) ? r : best;
+    }, null);
+    cheapestId = cheapestId ? cheapestId.model.id : null;
+
+    var filtered = results.filter(function(r){ return activeTier === "All" || r.model.category === activeTier; });
+
+    filtered.sort(function(a,b){
+      var av, bv;
+      if (sortKey === "input"){ av=a.eff.input; bv=b.eff.input; }
+      else if (sortKey === "output"){ av=a.eff.output; bv=b.eff.output; }
+      else if (sortKey === "savings"){ av=a.netSavings; bv=b.netSavings; }
+      else if (sortKey === "roi"){ av=a.roi; bv=b.roi; }
+      else { av=a.annualCost; bv=b.annualCost; }
+      return sortDir === "asc" ? av-bv : bv-av;
+    });
+
+    var body = $("costTableBody");
+    body.innerHTML = "";
+    filtered.forEach(function(r){
+      var tr = document.createElement("tr");
+      if (r.model.id === selectedModelId) tr.className = "is-selected";
+      var varName = PROVIDER_VAR[r.model.provider];
+      var cachedTxt = (r.eff.cached === null || r.eff.cached === undefined) ? "—" : "$" + r.eff.cached.toFixed(2);
+      tr.innerHTML =
+        '<td class="model-cell">' + r.model.name + (r.model.id === cheapestId ? '<span class="badge-cheap">Cheapest</span>' : '') + '<span class="model-cell__tier">' + r.model.tier + '</span></td>' +
+        '<td><span class="tag"><span class="tag__dot" style="background:var(' + varName + ')"></span>' + r.model.provider + '</span></td>' +
+        '<td class="num mono">$' + r.eff.input.toFixed(2) + '</td>' +
+        '<td class="num mono">$' + r.eff.output.toFixed(2) + '</td>' +
+        '<td class="num mono">' + cachedTxt + '</td>' +
+        '<td class="num mono">' + fmtUSD(r.annualCost) + '</td>' +
+        '<td class="num mono pos">' + fmtUSD(r.netSavings) + '</td>' +
+        '<td class="num mono pos">' + fmtPct(r.roi) + '</td>';
+      tr.addEventListener("click", function(){ selectedModelId = r.model.id; recalcAll(); });
+      body.appendChild(tr);
+    });
+
+    // header sort indicators
+    document.querySelectorAll("#costTable thead th.sortable").forEach(function(th){
+      th.innerHTML = th.textContent.replace(/\s*[▲▼]\s*$/,"");
+      if (th.getAttribute("data-key") === sortKey){
+        th.innerHTML += '<span class="arrow">' + (sortDir === "asc" ? "▲" : "▼") + '</span>';
+      }
+    });
+  }
+
+  // ---------- stats ----------
+  function renderStats(selected, manual){
+    var paybackTxt = (selected.paybackDays === null) ? "Not reached" : fmtNum(selected.paybackDays, selected.paybackDays < 10 ? 1 : 0) + " days";
+    var cards = [
+      {label:"Net annual savings", val:fmtUSD(selected.netSavings), note:"vs. doing this manually, at " + selected.model.name},
+      {label:"ROI", val:fmtPct(selected.roi), note:"return per dollar spent on AI"},
+      {label:"Payback period", val:paybackTxt, note:"time for AI spend to pay for itself"},
+      {label:"Cost multiplier", val:isFinite(selected.multiplier) ? fmtNum(selected.multiplier,1) + "×" : "—", note:"how much cheaper AI is than manual labor"},
+      {label:"Hours freed / year", val:fmtNum(manual.hoursSaved,0), note:"at " + readInputs().efficiencyPct + "% automation efficiency"},
+      {label:"3-year net savings", val:fmtUSD(selected.netSavings*3), note:"cumulative, at today's prices"}
+    ];
+    var grid = $("statsGrid");
+    grid.innerHTML = "";
+    cards.forEach(function(c){
+      var div = document.createElement("div");
+      div.className = "stat-card";
+      div.innerHTML = '<div class="stat-card__label">' + c.label + '</div><div class="stat-card__val">' + c.val + '</div><div class="stat-card__note">' + c.note + '</div>';
+      grid.appendChild(div);
+    });
+  }
+
+  // ---------- before / after hero ----------
+  function renderHero(manual, selected, inp){
+    $("manualBig").textContent = fmtUSD(manual.annualManualCost);
+    $("manualHours").textContent = fmtNum(manual.annualHours,0) + " hrs";
+    $("manualRate").textContent = fmtUSD(inp.hourlyRate) + "/hr";
+    $("manualWeeks").textContent = fmtNum(inp.weeksPerYear,0);
+
+    $("autoBig").textContent = fmtUSD(selected.annualCost);
+    $("autoVolume").textContent = fmtNum(selected.volume,0);
+    $("autoHoursFreed").textContent = fmtNum(manual.hoursSaved,0) + " hrs";
+    var costPerHour = manual.hoursSaved > 0 ? selected.annualCost/manual.hoursSaved : 0;
+    $("autoCostPerHour").textContent = fmtUSD(costPerHour);
+
+    $("savingsAmt").textContent = (selected.netSavings >= 0 ? "" : "−") + fmtUSD(Math.abs(selected.netSavings));
+    var multTxt = isFinite(selected.multiplier) ? fmtNum(selected.multiplier,1) + "× cheaper" : "dramatically cheaper";
+    $("savingsSub").textContent = "saved per year · " + multTxt + " than manual";
+  }
+
+  // ---------- pricing ledger ----------
+  function renderLedger(){
+    var body = $("ledgerTableBody");
+    body.innerHTML = "";
+    MODELS.forEach(function(m){
+      var eff = getEffective(m);
+      var varName = PROVIDER_VAR[m.provider];
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td class="model-cell">' + m.name + '<span class="model-cell__tier">' + m.tier + '</span></td>' +
+        '<td><span class="tag"><span class="tag__dot" style="background:var(' + varName + ')"></span>' + m.provider + '</span></td>' +
+        '<td><input type="number" step="0.01" min="0" class="ledger-input" data-id="' + m.id + '" data-field="input" value="' + eff.input + '"></td>' +
+        '<td><input type="number" step="0.01" min="0" class="ledger-input" data-id="' + m.id + '" data-field="output" value="' + eff.output + '"></td>' +
+        '<td><input type="number" step="0.01" min="0" class="ledger-input" data-id="' + m.id + '" data-field="cached" placeholder="n/a" value="' + (eff.cached === null || eff.cached === undefined ? "" : eff.cached) + '"></td>' +
+        '<td class="verified-cell"><span class="verified-cell__date">' + eff.verified + sourceLabel(eff.source) + '</span><a href="' + m.url + '" target="_blank" rel="noopener">Check official page ↗</a></td>';
+      body.appendChild(tr);
+    });
+
+    body.querySelectorAll(".ledger-input").forEach(function(inputEl){
+      inputEl.addEventListener("change", function(){
+        var id = inputEl.getAttribute("data-id");
+        var field = inputEl.getAttribute("data-field");
+        var raw = inputEl.value.trim();
+        var val = raw === "" ? null : parseFloat(raw);
+        if (!overrides[id]) overrides[id] = {};
+        overrides[id][field] = val;
+        overrides[id].verified = todayLabel();
+        saveOverrides();
+        recalcAll();
+      });
+    });
+  }
+
+  function showSaveStatus(msg){
+    $("saveStatus").textContent = msg;
+  }
+
+  function saveOverrides(){
+    if (!storageAvailable){
+      showSaveStatus("Saved for this session only — browser storage unavailable here.");
+      return;
+    }
+    window.storage.set("pricing-overrides", JSON.stringify(overrides)).then(function(res){
+      showSaveStatus(res ? ("Saved · " + todayLabel()) : "Could not save — edits apply this session only.");
+    }).catch(function(){
+      showSaveStatus("Could not save — edits apply this session only.");
+    });
+  }
+
+  function loadOverrides(){
+    if (!storageAvailable){
+      showSaveStatus("Edits apply to this session only — browser storage unavailable here.");
+      return Promise.resolve();
+    }
+    return window.storage.get("pricing-overrides").then(function(res){
+      if (res && res.value){
+        try { overrides = JSON.parse(res.value); } catch(e){ overrides = {}; }
+      }
+      showSaveStatus("Saved pricing loaded.");
+    }).catch(function(){
+      showSaveStatus("No saved pricing found — using Jun 2026 defaults.");
+    });
+  }
+
+  function loadRemoteFeed(){
+    if (!PRICING_FEED_URL){
+      updateSnapshotPill();
+      return Promise.resolve();
+    }
+    return fetch(PRICING_FEED_URL, {cache:"no-store"}).then(function(res){
+      if (!res.ok) throw new Error("bad status " + res.status);
+      return res.json();
+    }).then(function(data){
+      remoteFeed = (data && data.models) ? data.models : {};
+      remoteFeedDate = (data && data.generated_at) ? data.generated_at : null;
+      remoteFeedStatus = "ok";
+      updateSnapshotPill();
+    }).catch(function(){
+      remoteFeedStatus = "error";
+      updateSnapshotPill();
+    });
+  }
+
+  function updateSnapshotPill(){
+    var pill = $("snapshotPill");
+    if (!pill) return;
+    if (remoteFeedStatus === "ok"){
+      pill.textContent = "Pricing auto-checked · " + (remoteFeedDate || "recently");
+    } else if (remoteFeedStatus === "error"){
+      pill.textContent = "Pricing snapshot · Jun 2026 (auto-update unreachable)";
+    } else if (remoteFeedStatus === "unconfigured"){
+      pill.textContent = "Pricing snapshot · Jun 2026";
+    } else {
+      pill.textContent = "Checking for current pricing…";
+    }
+  }
+
+  function resetPricing(){
+    if (!window.confirm("Reset all prices to the June 2026 defaults? This clears any edits you've made.")) return;
+    overrides = {};
+    saveOverrides();
+    recalcAll();
+  }
+
+  // ---------- orchestration ----------
+  function recalcAll(){
+    var inp = readInputs();
+    var manual = computeManual(inp);
+    var results = MODELS.map(function(m){ return computeModel(m, inp, manual); });
+    var selected = results.filter(function(r){ return r.model.id === selectedModelId; })[0] || results[0];
+
+    renderTicker();
+    renderTierFilters();
+    renderTable(results);
+    renderStats(selected, manual);
+    renderHero(manual, selected, inp);
+    renderLedger();
+  }
+
+  function attachListeners(){
+    ["hourlyRate","hoursPerWeek","weeksPerYear","inputTokens","outputTokens"].forEach(function(id){
+      $(id).addEventListener("input", recalcAll);
+    });
+    $("efficiencyPct").addEventListener("input", function(){
+      $("efficiencyVal").textContent = this.value + "%";
+      recalcAll();
+    });
+    $("cachePct").addEventListener("input", function(){
+      $("cacheVal").textContent = this.value + "%";
+      recalcAll();
+    });
+    $("advancedToggle").addEventListener("click", function(){
+      var panel = $("advancedPanel");
+      var hidden = panel.hasAttribute("hidden");
+      if (hidden) panel.removeAttribute("hidden"); else panel.setAttribute("hidden","");
+      $("advancedChevron").textContent = hidden ? "▴" : "▾";
+    });
+    $("heroModelSelect").addEventListener("change", function(){
+      selectedModelId = this.value;
+      recalcAll();
+    });
+    $("resetPricingBtn").addEventListener("click", resetPricing);
+
+    document.querySelectorAll("#costTable thead th.sortable").forEach(function(th){
+      th.addEventListener("click", function(){
+        var key = th.getAttribute("data-key");
+        if (sortKey === key){ sortDir = sortDir === "asc" ? "desc" : "asc"; }
+        else { sortKey = key; sortDir = "asc"; }
+        var inp = readInputs();
+        var manual = computeManual(inp);
+        var results = MODELS.map(function(m){ return computeModel(m, inp, manual); });
+        renderTable(results);
+      });
+    });
+  }
+
+  function init(){
+    renderModelSelect();
+    attachListeners();
+    updateSnapshotPill();
+    recalcAll(); // paint immediately with built-in defaults
+    Promise.all([loadRemoteFeed(), loadOverrides()]).then(recalcAll); // then layer in feed + saved edits
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
